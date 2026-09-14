@@ -1,0 +1,2 @@
+.mobile-nav{display:none}
+@media(max-width:900px){.mobile-nav{display:flex;position:absolute;top:68px;left:16px;right:16px;flex-direction:column;padding:12px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow)}.mobile-nav a{padding:13px;font-size:13px;font-weight:800;color:var(--muted)}}
