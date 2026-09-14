@@ -1,0 +1,68 @@
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
+export type Database = {
+  public: {
+    Tables: {
+      projects: {
+        Relationships: [];
+        Row: {
+          id: string;
+          title: string;
+          slug: string;
+          category: string;
+          description: string;
+          case_study: string | null;
+          image_url: string | null;
+          video_url: string | null;
+          technologies: string[];
+          results: Json;
+          published: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          title: string;
+          slug: string;
+          category: string;
+          description: string;
+          case_study?: string | null;
+          image_url?: string | null;
+          video_url?: string | null;
+          technologies?: string[];
+          results?: Json;
+          published?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database['public']['Tables']['projects']['Insert']>;
+      };
+      inquiries: {
+        Relationships: [];
+        Row: {
+          id: string;
+          email: string;
+          company_size: string | null;
+          process: string | null;
+          message: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          email: string;
+          company_size?: string | null;
+          process?: string | null;
+          message?: string | null;
+          created_at?: string;
+        };
+        Update: never;
+      };
+    };
+    Views: {};
+    Functions: {};
+    Enums: {};
+    CompositeTypes: {};
+  };
+};
+
+export type Project = Database['public']['Tables']['projects']['Row'];
