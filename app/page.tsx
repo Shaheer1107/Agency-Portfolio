@@ -714,7 +714,7 @@ export default function Home() {
         <DemoModal
           close={() => setDemo(null)}
           title={demo.title}
-          videoUrl={demo.video}
+          videoUrl={demo.video} 
         />
       )}
     </>
