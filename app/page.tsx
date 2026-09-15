@@ -6,21 +6,26 @@ import { slugify } from "@/lib/project-utils";
 import { ProjectMedia } from "@/components/project-media";
 import {
   ArrowRight,
-  Bot,
   Calendar,
   Check,
   ChevronDown,
-  CircleUserRound,
   Cloud,
   Database,
+  Eye,
+  FileBarChart,
+  FileSearch,
   FileText,
   Gauge,
   GitBranch,
   Globe2,
+  Headset,
   Layers3,
   Mail,
   Menu,
   Play,
+  Repeat2,
+  Table2,
+  Timer,
   X,
   Zap,
 } from "lucide-react";
@@ -67,6 +72,16 @@ const problems = [
     "Zero central observability over process throughput, bottlenecks, or turnaround speed.",
   ],
 ];
+const problemIcons = [
+  Repeat2,
+  Globe2,
+  FileBarChart,
+  Timer,
+  Table2,
+  Headset,
+  FileSearch,
+  Eye,
+];
 const faqs = [
   [
     "How fast can we deploy our first automation workflow?",
@@ -98,6 +113,33 @@ type ProjectCard = {
 
 function Header() {
   const [open, setOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("top");
+  const navItems = [
+    ["top", "Home"],
+    ["services", "Services"],
+    ["projects", "Our Work"],
+    ["approach", "About"],
+    ["audit", "Contact"],
+  ] as const;
+
+  useEffect(() => {
+    const updateActiveSection = () => {
+      const marker = window.scrollY + 120;
+      let currentSection = "top";
+
+      for (const [sectionId] of navItems) {
+        const section = document.getElementById(sectionId);
+        if (section && section.offsetTop <= marker) currentSection = sectionId;
+      }
+
+      setActiveSection(currentSection);
+    };
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    return () => window.removeEventListener("scroll", updateActiveSection);
+  }, []);
+
   return (
     <header className="site-header">
       <div className="container nav">
@@ -108,21 +150,21 @@ function Header() {
           </span>
         </Link>
         <nav className="nav-links">
-          <a className="active" href="#top">
-            Home
-          </a>
-          <a href="#services">Services</a>
-          <a href="#projects">Our Work</a>
-          <a href="#approach">About</a>
-          <a href="#audit">Contact</a>
+          {navItems.map(([id, label]) => (
+            <a
+              className={activeSection === id ? "active" : ""}
+              href={`#${id}`}
+              aria-current={activeSection === id ? "page" : undefined}
+              key={id}
+            >
+              {label}
+            </a>
+          ))}
         </nav>
         <div className="nav-actions">
           <a className="button primary" href="#audit">
             Book a Consultation
           </a>
-          <span className="profile">
-            <CircleUserRound size={16} />
-          </span>
           <button
             className="menu-toggle"
             onClick={() => setOpen(!open)}
@@ -133,18 +175,11 @@ function Header() {
         </div>
         {open && (
           <nav className="mobile-nav">
-            <a href="#services" onClick={() => setOpen(false)}>
-              Services
-            </a>
-            <a href="#projects" onClick={() => setOpen(false)}>
-              Our Work
-            </a>
-            <a href="#approach" onClick={() => setOpen(false)}>
-              About
-            </a>
-            <a href="#audit" onClick={() => setOpen(false)}>
-              Contact
-            </a>
+            {navItems.slice(1).map(([id, label]) => (
+              <a href={`#${id}`} onClick={() => setOpen(false)} key={id}>
+                {label}
+              </a>
+            ))}
           </nav>
         )}
       </div>
@@ -381,7 +416,10 @@ export default function Home() {
               {problems.map((p, i) => (
                 <article className="info-card" key={p[1]}>
                   <div className="info-icon">
-                    <Bot size={20} />
+                    {(() => {
+                      const Icon = problemIcons[i];
+                      return <Icon size={20} strokeWidth={1.8} />;
+                    })()}
                   </div>
                   <h3>{p[1]}</h3>
                   <p>{p[2]}</p>
