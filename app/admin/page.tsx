@@ -31,7 +31,7 @@ type Inquiry = {
 const emptyForm: ProjectForm = {
   title: "",
   slug: "",
-  category: "Automation",
+  category: "AI Automation",
   description: "",
   case_study: "",
   image_url: "",
@@ -65,6 +65,8 @@ export default function AdminPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
+  const [categories, setCategories] = useState<string[]>(["AI Automation", "Web Development"]);
+  const [newCategory, setNewCategory] = useState("");
   const [form, setForm] = useState<ProjectForm>(emptyForm);
   const [editing, setEditing] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -81,6 +83,7 @@ export default function AdminPage() {
         setSession(Boolean(data.user));
         if (data.user) {
           loadProjects();
+          loadCategories();
           loadInquiries();
         }
       });
@@ -90,6 +93,27 @@ export default function AdminPage() {
     const body = await response.json();
     if (response.ok) setProjects(body.projects);
     else setMessage(body.error);
+  }
+  async function loadCategories() {
+    const response = await fetch("/api/admin/categories");
+    const body = await response.json();
+    if (response.ok) setCategories(body.categories.map((category: { name: string }) => category.name));
+    else setMessage(body.error);
+  }
+  async function addCategory() {
+    const name = newCategory.trim();
+    if (!name) return;
+    const response = await fetch("/api/admin/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    });
+    const body = await response.json();
+    if (!response.ok) return setMessage(body.error);
+    setCategories((items) => [...items, body.category.name]);
+    setForm((current) => ({ ...current, category: body.category.name }));
+    setNewCategory("");
+    setMessage("Category added.");
   }
   async function loadInquiries() {
     setInquiryLoading(true);
@@ -288,14 +312,29 @@ export default function AdminPage() {
               </label>
               <label>
                 Category
-                <input
+                <select
                   required
                   value={form.category}
                   onChange={(e) =>
                     setForm({ ...form, category: e.target.value })
                   }
-                />
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
               </label>
+              <div className="category-form">
+                <label>
+                  Add category
+                  <input
+                    value={newCategory}
+                    placeholder="e.g. Custom Solutions"
+                    onChange={(event) => setNewCategory(event.target.value)}
+                  />
+                </label>
+                <button className="admin-button" type="button" onClick={addCategory}><Plus size={15} /> Add</button>
+              </div>
               <label>
                 Description
                 <textarea

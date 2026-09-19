@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     .insert({
       title: String(payload.title ?? "").trim(),
       slug: slugify(String(payload.slug || payload.title || "project")),
-      category: String(payload.category ?? "Automation").trim(),
+      category: String(payload.category ?? "AI Automation").trim(),
       description: String(payload.description ?? "").trim(),
       case_study: payload.case_study ?? null,
       image_url: payload.image_url ?? null,

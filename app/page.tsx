@@ -6,8 +6,11 @@ import { slugify } from "@/lib/project-utils";
 import { ProjectMedia } from "@/components/project-media";
 import {
   ArrowRight,
+  Bot,
   Calendar,
   Check,
+  ChartNoAxesCombined,
+  Code2,
   ChevronDown,
   Cloud,
   Database,
@@ -28,6 +31,7 @@ import {
   Timer,
   X,
   Zap,
+  Sparkles,
 } from "lucide-react";
 
 const problems = [
@@ -141,13 +145,11 @@ function Header() {
   }, []);
 
   return (
-    <header className="site-header">
+    <header className="site-header home-header">
       <div className="container nav">
         <Link className="brand" href="/">
-          <span className="brand-mark">AIQ</span>Automate
-          <span>
-            <em>IQ</em>
-          </span>
+          <span className="brand-mark" aria-hidden="true"><span /><span /></span>
+          <span>Automate <em>IQ</em></span>
         </Link>
         <nav className="nav-links">
           {navItems.map(([id, label]) => (
@@ -185,6 +187,31 @@ function Header() {
       </div>
     </header>
   );
+}
+
+function CursorFollower() {
+  useEffect(() => {
+    if (window.matchMedia("(pointer: coarse)").matches) return;
+    const cursor = document.querySelector<HTMLElement>(".cursor-follower");
+    if (!cursor) return;
+    const move = (event: MouseEvent) => {
+      cursor.style.left = `${event.clientX}px`;
+      cursor.style.top = `${event.clientY}px`;
+      cursor.classList.add("is-visible");
+    };
+    const enter = () => cursor.classList.add("is-visible");
+    const leave = () => cursor.classList.remove("is-visible");
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseenter", enter);
+    window.addEventListener("mouseleave", leave);
+    return () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseenter", enter);
+      window.removeEventListener("mouseleave", leave);
+    };
+  }, []);
+
+  return <span className="cursor-follower" aria-hidden="true"><i /></span>;
 }
 
 function DemoModal({
@@ -238,10 +265,15 @@ export default function Home() {
   const [contactError, setContactError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState<ProjectCard[]>([]);
+  const [categories, setCategories] = useState<string[]>(["AI Automation", "Web Development"]);
+  const [activeCategory, setActiveCategory] = useState("All");
   useEffect(() => {
-    fetch("/api/projects")
-      .then((response) => response.json())
-      .then((body) => {
+    Promise.all([fetch("/api/projects"), fetch("/api/categories")])
+      .then(async ([projectsResponse, categoriesResponse]) => [
+        await projectsResponse.json(),
+        await categoriesResponse.json(),
+      ])
+      .then(([body, categoryBody]) => {
         if (Array.isArray(body.projects))
           setProjects(
             body.projects.map(
@@ -257,7 +289,7 @@ export default function Home() {
               }) => ({
                 id: project.id,
                 title: project.title,
-                tag: project.category,
+                tag: project.category === "Automation" ? "AI Automation" : project.category,
                 desc: project.description,
                 tech: project.technologies,
                 image: project.image_url ?? "",
@@ -266,9 +298,16 @@ export default function Home() {
               }),
             ),
           );
+        if (Array.isArray(categoryBody.categories) && categoryBody.categories.length)
+          setCategories(categoryBody.categories
+            .map((category: { name: string }) => category.name)
+            .filter((category: string) => category !== "All"));
       })
       .catch(() => setProjects([]));
   }, []);
+  const visibleProjects = activeCategory === "All"
+    ? projects
+    : projects.filter((project) => project.tag === activeCategory);
   async function submitInquiry(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setContactError("");
@@ -299,21 +338,21 @@ export default function Home() {
   }
   return (
     <>
+      <CursorFollower />
       <Header />
       <main id="top">
         <section className="hero">
           <div className="container hero-grid">
             <div className="hero-copy">
-              <span className="eyebrow" style={{ color: "var(--cyan-bright)" }}>
-                AI Automation Agency
+              <span className="eyebrow hero-eyebrow">
+                <Sparkles size={14} /> AI Automation Agency
               </span>
               <h1>
-                Turn repetitive work into <span>intelligent automation.</span>
+                Turn repetitive work<br />into <span>intelligent automation.</span>
               </h1>
               <p>
-                We help forward-thinking enterprises automate manual pipelines,
-                connect disparate architectures, and deploy custom autonomous
-                agents for resilient operations.
+                We build smart AI solutions and modern web applications to help
+                businesses automate processes, save time and scale with technology.
               </p>
               <div className="hero-actions">
                 <a className="button primary" href="#projects">
@@ -325,53 +364,55 @@ export default function Home() {
               </div>
               <div className="trust">
                 <span>
-                  <i />
-                  AI automation
+                  <Sparkles size={18} />
+                  <b>AI Automation</b><small>Save time, reduce manual work</small>
                 </span>
                 <span>
-                  <i />
-                  Business process automation
+                  <Code2 size={18} />
+                  <b>Web Development</b><small>Modern, scalable, fast</small>
                 </span>
                 <span>
-                  <i />
-                  Intelligent workflows
+                  <Zap size={18} />
+                  <b>Custom Solutions</b><small>Built for your business</small>
                 </span>
               </div>
             </div>
             <div className="system-visual">
               <div className="core">
-                AI<small>ENGINE CORE</small>
+                <Sparkles size={20} />
+                <strong>AI</strong><small>AUTOMATION<br />& WEB SOLUTIONS</small>
               </div>
               <div className="node n1">
-                <Cloud size={18} />
+                <Bot size={21} />
                 <div>
-                  <b>Cloud</b>
-                  <small>APIs & webhooks</small>
+                  <b>Automate</b>
+                  <small>Repetitive Tasks</small>
                 </div>
+                <ArrowRight size={16} />
               </div>
               <div className="node n2">
-                <Database size={18} />
+                <Code2 size={21} />
                 <div>
-                  <b>Database</b>
-                  <small>Postgres / vector</small>
+                  <b>Build Modern</b>
+                  <small>Web Applications</small>
                 </div>
+                <ArrowRight size={16} />
               </div>
               <div className="node n3">
-                <GitBranch size={18} />
+                <Cloud size={21} />
                 <div>
-                  <b>CRM</b>
-                  <small>Salesforce / HubSpot</small>
+                  <b>Integrate</b>
+                  <small>Your Tools</small>
                 </div>
+                <ArrowRight size={16} />
               </div>
               <div className="node n4">
-                <Mail size={18} />
+                <ChartNoAxesCombined size={21} />
                 <div>
-                  <b>Email</b>
-                  <small>Slack & Exchange</small>
+                  <b>Scale</b>
+                  <small>Your Business</small>
                 </div>
-              </div>
-              <div className="latency">
-                <Zap size={14} color="var(--cyan)" /> Sub-second routing latency
+                <ArrowRight size={16} />
               </div>
             </div>
           </div>
@@ -512,14 +553,26 @@ export default function Home() {
                 environments.
               </p>
             </div>
+            <div className="project-filters" role="tablist" aria-label="Project categories">
+              {["All", ...categories].map((category) => (
+                <button
+                  className={activeCategory === category ? "active" : ""}
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  role="tab"
+                  aria-selected={activeCategory === category}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
             <div className="project-grid">
-              {projects.length === 0 && (
+              {visibleProjects.length === 0 && (
                 <p className="empty-projects">
-                  Projects will appear here once you publish them from the admin
-                  dashboard.
+                  No projects in this category yet.
                 </p>
               )}
-              {projects.map((project) => (
+              {visibleProjects.map((project) => (
                 <article className="project-card" key={project.title}>
                   <div className="project-image">
                     <ProjectMedia src={project.image} alt={project.title} />
