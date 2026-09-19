@@ -45,6 +45,8 @@ export type Database = {
           company_size: string | null;
           process: string | null;
           message: string | null;
+          status: string;
+          replied_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -53,9 +55,11 @@ export type Database = {
           company_size?: string | null;
           process?: string | null;
           message?: string | null;
+          status?: string;
+          replied_at?: string | null;
           created_at?: string;
         };
-        Update: never;
+        Update: Partial<Database['public']['Tables']['inquiries']['Insert']>;
       };
     };
     Views: {};

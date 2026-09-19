@@ -236,6 +236,7 @@ export default function Home() {
   const [demo, setDemo] = useState<ProjectCard | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [contactError, setContactError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [projects, setProjects] = useState<ProjectCard[]>([]);
   useEffect(() => {
     fetch("/api/projects")
@@ -271,6 +272,8 @@ export default function Home() {
   async function submitInquiry(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setContactError("");
+    setSubmitted(false);
+    setSubmitting(true);
     const form = event.currentTarget;
     const data = new FormData(form);
     const response = await fetch("/api/contact", {
@@ -280,14 +283,19 @@ export default function Home() {
         email: data.get("email"),
         company_size: data.get("company_size"),
         process: data.get("process"),
+        message: data.get("message"),
       }),
     });
     if (!response.ok) {
-      setContactError("Unable to submit right now. Please try again.");
+      const body = await response.json().catch(() => ({}));
+      setContactError(body.error || "Unable to submit right now. Please try again.");
+      setSubmitting(false);
       return;
     }
     setSubmitted(true);
+    setSubmitting(false);
     form.reset();
+    window.setTimeout(() => setSubmitted(false), 3000);
   }
   return (
     <>
@@ -604,15 +612,21 @@ export default function Home() {
                       placeholder="e.g. invoice reconciliation"
                     />
                   </div>
-                  <button className="button primary" type="submit">
-                    Generate my strategy <ArrowRight size={16} />
+                  <div className="field">
+                    <label>Message</label>
+                    <textarea name="message" rows={3} placeholder="Tell us what you want to improve" />
+                  </div>
+                  <button className="button primary" type="submit" disabled={submitting}>
+                    {submitting ? "Sending..." : "Generate my strategy"} <ArrowRight size={16} />
                   </button>
                   {submitted && (
-                    <div className="success">
-                      ✓ Blueprint request submitted. We will be in touch within
-                      24 hours.
+                    <div className="success" role="status">
+                      <span>✓</span> Your message has been sent. We will be in touch within 24 hours.
+                      <i className="success-progress" />
+                      <button type="button" onClick={() => setSubmitted(false)} aria-label="Dismiss notification"><X size={14} /></button>
                     </div>
                   )}
+                  {contactError && <div className="form-error" role="alert">{contactError}</div>}
                 </form>
               </div>
             </div>

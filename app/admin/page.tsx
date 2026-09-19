@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
-import { LogOut, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { LogOut, Mail, Pencil, Plus, RefreshCw, Reply, Save, Trash2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/browser";
 import type { Project } from "@/lib/supabase/database.types";
 import { slugify } from "@/lib/project-utils";
@@ -17,6 +17,16 @@ type ProjectForm = {
   video_url: string;
   technologies: string;
   published: boolean;
+};
+type Inquiry = {
+  id: string;
+  email: string;
+  company_size: string | null;
+  process: string | null;
+  message: string | null;
+  status: string;
+  replied_at: string | null;
+  created_at: string;
 };
 const emptyForm: ProjectForm = {
   title: "",
@@ -60,12 +70,19 @@ export default function AdminPage() {
   const [message, setMessage] = useState("");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [inquiryLoading, setInquiryLoading] = useState(false);
   useEffect(() => {
     getSupabase()
       .auth.getUser()
       .then(({ data }) => {
         setSession(Boolean(data.user));
-        if (data.user) loadProjects();
+        if (data.user) {
+          loadProjects();
+          loadInquiries();
+        }
       });
   }, []);
   async function loadProjects() {
@@ -73,6 +90,29 @@ export default function AdminPage() {
     const body = await response.json();
     if (response.ok) setProjects(body.projects);
     else setMessage(body.error);
+  }
+  async function loadInquiries() {
+    setInquiryLoading(true);
+    const response = await fetch("/api/admin/inquiries");
+    const body = await response.json();
+    if (response.ok) setInquiries(body.inquiries);
+    else setMessage(body.error);
+    setInquiryLoading(false);
+  }
+  async function sendReply(id: string) {
+    if (!replyText.trim()) return;
+    setMessage("");
+    const response = await fetch(`/api/admin/inquiries/${id}/reply`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reply: replyText }),
+    });
+    const body = await response.json();
+    if (!response.ok) return setMessage(body.error);
+    setInquiries((items) => items.map((item) => item.id === id ? { ...item, status: "replied", replied_at: new Date().toISOString() } : item));
+    setReplyingTo(null);
+    setReplyText("");
+    setMessage("Reply sent successfully.");
   }
   async function login(event: FormEvent) {
     event.preventDefault();
@@ -192,6 +232,27 @@ export default function AdminPage() {
             <LogOut size={16} /> Sign out
           </button>
         </header>
+        <section className="inquiry-overview">
+          <div className="inquiry-kpi"><Mail size={19} /><div><strong>{inquiries.length}</strong><span>Total inquiries</span></div></div>
+          <div className="inquiry-kpi"><Reply size={19} /><div><strong>{inquiries.filter((item) => item.status === "new").length}</strong><span>Awaiting reply</span></div></div>
+          <button className="admin-button" onClick={loadInquiries} disabled={inquiryLoading}><RefreshCw size={15} className={inquiryLoading ? "spin" : ""} /> Refresh inbox</button>
+        </section>
+        <section className="admin-panel inbox-panel">
+          <div className="panel-heading"><div><span className="admin-kicker">Client communication</span><h2>Inquiry inbox</h2></div><span>Latest first</span></div>
+          <div className="inquiry-list">
+            {inquiries.length === 0 && <p className="empty">No inquiries received yet.</p>}
+            {inquiries.map((inquiry) => (
+              <article className="inquiry-card" key={inquiry.id}>
+                <div className="inquiry-card-head"><div><strong>{inquiry.email}</strong><small>{new Date(inquiry.created_at).toLocaleString()}</small></div><span className={`inquiry-status ${inquiry.status}`}>{inquiry.status === "new" ? "New" : "Replied"}</span></div>
+                <div className="inquiry-meta"><span>{inquiry.company_size || "Company size not provided"}</span><span>{inquiry.process || "Process not provided"}</span></div>
+                {inquiry.message && <p className="inquiry-message">{inquiry.message}</p>}
+                {replyingTo === inquiry.id ? (
+                  <div className="reply-box"><textarea rows={3} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder="Write your reply..." /><div><button className="admin-button" onClick={() => { setReplyingTo(null); setReplyText(""); }}>Cancel</button><button className="admin-button primary" onClick={() => sendReply(inquiry.id)}><Mail size={14} /> Send reply</button></div></div>
+                ) : <button className="admin-button reply-button" onClick={() => { setReplyingTo(inquiry.id); setReplyText(""); }}><Reply size={14} /> Reply to client</button>}
+              </article>
+            ))}
+          </div>
+        </section>
         <div className="admin-layout">
           <section className="admin-panel">
             <div className="panel-heading">
